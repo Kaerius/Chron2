@@ -5,18 +5,18 @@ AlexGyver Home Labs Inc.
 */
 #include <EEPROM.h>   //библиотека для работы со внутренней памятью ардуино
 #include <avr/sleep.h>   //библиотека режимов сна
-#include "TM1637.h"  //библиотека дисплея
+#include <GyverTM1637.h>  //библиотека дисплея
 #define CLK 5  //пин дисплея     
 #define DIO 4   //пин дисплея 
-TM1637 disp(CLK,DIO);   //обозвать дисплей disp
+GyverTM1637 disp(CLK,DIO);   //обозвать дисплей disp
 
-int FAIL[]={15,10,1,16};  //надпись FAIL
-int LOLO[]={6,12,18,2};  //надпись LOL
-int tire[]={17,17,17,17};  //надпись ----
-int SPED[]={18,5,20,18};  //надпись SP
-int EN[]={18,15,21,18};  //надпись EN
-int RAP[]={18,10,20,18};  //надпись RA
-int CO[]={18,12,0,18};  //надпись CO
+byte FAIL[4]={_F, _A, _i, _L};  //надпись FAIL
+byte LOLO[4]={_L, _O, _L, _empty};  //надпись LOL
+byte tire[4]={_dash, _dash, _dash, _dash};  //надпись ----
+byte SPED[4]={_empty, _S, _P, _empty};  //надпись SP
+byte EN[4]={_empty, _E, _N, _empty};  //надпись EN
+byte RAP[4]={_empty, _r, _A, _empty};  //надпись RA
+byte CO[4]={_empty, _C, _O, _empty};  //надпись CO
 
 float dist=0.0896;       //расстояние между датчиками в метрах 
 char masschar[5];  //массив символов для перевода
@@ -43,8 +43,8 @@ void setup() {
 	digitalWrite(9,HIGH);  //питание кнопки вкл
 	attachInterrupt(1,start,RISING);     //аппаратное прерывание при прохождении первого датчика
 	attachInterrupt(0,finish,RISING);      //аппаратное прерывание при прохождении второго датчика
-	disp.init();  //инициализация дисплея
-	disp.set(2);  //яркость (0-7)   
+	disp.clear();  //инициализация дисплея
+	disp.brightness(2);  //яркость (0-7)   
 	mass=EEPROM.read(0)+(float)EEPROM.read(1)/100;  //прочитать массу из внутренней памяти
 }
 void start() 
@@ -135,7 +135,7 @@ void mass_set() {
 	EEPROM.write(1,mass_mem);
 	disp.point(POINT_OFF);
 	delay(500);
-	print_disp(tire);
+	disp.displayByte(tire);
 }
 
 void energy_print() {
@@ -182,7 +182,7 @@ void black_print(String x) {
 
 void loop() {
 	if (initial==0) {                          //флажок первого запуска
-		print_disp(LOLO);
+		disp.displayByte(LOLO);
 		Serial.println("Press 0 speed measure mode (default)");        //выход из режимов
 		Serial.println("Press 1 to enegry mode");                      //режим измерения скорострельности
 		Serial.println("Press 2 to rapidity mode");                      //режим измерения скорострельности
@@ -193,7 +193,7 @@ void loop() {
 		Serial.println(" ");
 		initial=1;       //первый запуск, больше не показываем сообщения    
 		delay(500);
-		print_disp(tire);   // вывести -----
+		disp.displayByte(tire);   // вывести -----
 	}
 
 	if (Serial.available() > 0 && mode!=2) {   //еси есть какие буквы на вход с порта и не выбран 2 режим
@@ -306,24 +306,24 @@ void loop() {
 			disp.point(POINT_OFF);
 			switch (mode) {
 			case 0:
-				print_disp(SPED);
+				disp.displayByte(SPED);
 				delay(300);
-				print_disp(tire);
+				disp.displayByte(tire);
 				break;
 			case 1:
-				print_disp(EN);
+				disp.displayByte(EN);
 				delay(300);
-				print_disp(tire);
+				disp.displayByte(tire);
 				break;
 			case 2:
-				print_disp(RAP);
+				disp.displayByte(RAP);
 				delay(300);
-				print_disp(tire);
+				disp.displayByte(tire);
 				break;
 			case 3:
-				print_disp(CO);
+				disp.displayByte(CO);
 				delay(300);
-				print_disp(tire);
+				disp.displayByte(tire);
 				break;
 			}
 			break;
@@ -370,12 +370,12 @@ void loop() {
 
 	if (micros()-gap1>1000000 && gap1!=0 && mode!=5) { // (если пуля прошла первый датчик) И (прошла уже 1 секунда, а второй датчик не тронут)
 		disp.point(POINT_OFF);
-		print_disp(FAIL);  //вывести fail 
+		disp.displayByte(FAIL);  //вывести fail 
 		Serial.println("FAIL"); //выдаёт FAIL через 1 секунду, если пуля прошла через первый датчик, а через второй нет
 		gap1=0;
 		gap2=0;
 		delay(400);
-		print_disp(tire);   // вывести -----
+		disp.displayByte(tire);   // вывести -----
 		sleep=0;
 		sleep_timer=millis();
 	}
